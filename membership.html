@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Membership | My MQA+</title><link rel="stylesheet" href="styles.css">
+<style>
+body{background:#f8f5fa}.member-head{padding:28px max(5vw,24px);background:linear-gradient(135deg,#35164e,#6c2f87);color:#fff}.member-head a{color:#fff;font-weight:800}.wrap{max-width:1180px;margin:auto;padding:32px 24px 70px}.membership-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:20px}.card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:28px}.price{font-size:42px;font-weight:900;color:var(--purple);letter-spacing:-2px}.price small{font-size:16px;letter-spacing:0}.benefit-list{padding:0;list-style:none;margin:24px 0}.benefit-list li{padding:12px 0;border-bottom:1px solid var(--line);line-height:1.45}.state{display:inline-flex;padding:7px 12px;border-radius:999px;background:#f5e8f2;color:var(--purple);font-size:12px;font-weight:850}.zeffy-box{overflow:hidden}.zeffy-box h2{margin-top:0}.notice{font-size:13px;line-height:1.55;color:var(--muted);margin-bottom:20px}@media(max-width:800px){.membership-grid{grid-template-columns:1fr}}
+</style></head>
+<body>
+<header class="member-head"><a href="./">← Back to My MQA+</a></header>
+<main class="wrap">
+<p class="eyebrow">MY MQA+ MEMBERSHIP</p><h1 style="font-size:42px;margin:0 0 28px">Become a Member</h1>
+<section class="membership-grid">
+<div class="card"><span class="state" id="membershipState">Checking membership…</span><div class="price">$25<small>/month</small></div><p>Support MQA+ while receiving member benefits throughout the year.</p><ul class="benefit-list"><li><strong>Two monthly Community Group Meetup activities</strong> included with your membership.</li><li><strong>$5 off eligible MQA+ events.</strong></li><li><strong>Digital membership experience</strong> through your My MQA+ portal.</li><li>Your free My MQA+ portal account remains available if your paid membership becomes inactive.</li></ul></div>
+<div class="card zeffy-box"><h2>Start your membership</h2><p class="notice">Complete the secure Zeffy membership form below. Your My MQA+ portal account and your paid membership are separate parts of the experience.</p>
+<div>
+  <div data-zeffy-embed data-form-url="/embed/ticketing/my-mqa-memberships"></div>
+  <div data-zeffy-embed-fallback style="display:none;">
+    <div style="position:relative;overflow:hidden;height:450px;width:100%;padding-top:450px;"><iframe title="My MQA+ membership form powered by Zeffy" style="position:absolute;border:0;top:0;left:0;bottom:0;right:0;width:100%;height:100%" data-zeffy-embed-src="https://www.zeffy.com/embed/ticketing/my-mqa-memberships" allowpaymentrequest allowTransparency="true"></iframe></div>
+  </div>
+  <script src="https://www.zeffy.com/embed/v2/zeffy-embed.js" onerror="document.querySelectorAll('[data-zeffy-embed-fallback]').forEach(function(el){el.style.display='block';el.querySelectorAll('iframe[data-zeffy-embed-src]').forEach(function(f){f.src=f.getAttribute('data-zeffy-embed-src');});});"></script>
+</div></div></section></main>
+<script>
+const API="https://mqa-portal.luisxaviercruz.workers.dev",token=localStorage.getItem("mqa_session");
+if(!token)location.replace("signin.html");
+(async()=>{try{const r=await fetch(API+"/auth/me",{headers:{Authorization:"Bearer "+token}});const d=await r.json();if(!r.ok||!d.user){localStorage.removeItem("mqa_session");location.replace("signin.html");return}const m=d.user.membership||{};const active=m.active===true||String(m.status||"").toLowerCase()==="active";document.getElementById("membershipState").textContent=active?"Active MQA+ Member":"Free Portal Account"}catch(_){document.getElementById("membershipState").textContent="Unable to verify membership"}})();
+</script></body></html>
