@@ -6,11 +6,11 @@
   <title>My MQA+ | Member Portal</title>
   <meta name="description" content="My MQA+ secure community, membership, volunteer, career, resources and leadership portal.">
   <link rel="stylesheet" href="styles.css">
-<style>.portal{min-height:100vh;background:#f8f5fa}.portal-head{padding:34px max(5vw,24px);background:linear-gradient(135deg,#35164e,#6c2f87);color:#fff}.portal-head p{margin:6px 0 0;color:#e9dff0}.dashboard{padding:28px max(5vw,24px) 70px}.status-row{display:grid;grid-template-columns:1.4fr .8fr;gap:18px;margin-bottom:20px}.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px}.member-state{display:inline-flex;padding:7px 12px;border-radius:999px;background:#f5e8f2;color:var(--purple);font-size:12px;font-weight:850}.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.dash-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;min-height:155px}.dash-card h3{margin:12px 0 7px}.dash-card p{font-size:13px;line-height:1.55;color:var(--muted);margin:0}.locked{opacity:.72}.signout{background:transparent;border:1px solid #ffffff70;color:#fff;border-radius:999px;padding:9px 14px;font-weight:800;cursor:pointer}.portal-top{display:flex;align-items:center;justify-content:space-between;gap:18px}@media(max-width:800px){.status-row,.dash-grid{grid-template-columns:1fr}}</style>
+<style>.portal{min-height:100vh;background:#f8f5fa}.portal-head{padding:34px max(5vw,24px);background:linear-gradient(135deg,#35164e,#6c2f87);color:#fff}.portal-head p{margin:6px 0 0;color:#e9dff0}.dashboard{padding:28px max(5vw,24px) 70px}.status-row{display:grid;grid-template-columns:1.4fr .8fr;gap:18px;margin-bottom:20px}.panel{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px}.member-state{display:inline-flex;padding:7px 12px;border-radius:999px;background:#f5e8f2;color:var(--purple);font-size:12px;font-weight:850}.account-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.role-pill{display:inline-flex;padding:6px 10px;border-radius:999px;background:#f3edf6;color:#5d286f;font-size:12px;font-weight:800}.dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.dash-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;min-height:155px}.dash-card h3{margin:12px 0 7px}.dash-card p{font-size:13px;line-height:1.55;color:var(--muted);margin:0}.locked{opacity:.58}.restricted-note{font-size:11px!important;font-weight:800;color:#7b657f!important;margin-top:9px!important}.signout{background:transparent;border:1px solid #ffffff70;color:#fff;border-radius:999px;padding:9px 14px;font-weight:800;cursor:pointer}.portal-top{display:flex;align-items:center;justify-content:space-between;gap:18px}@media(max-width:800px){.status-row,.dash-grid{grid-template-columns:1fr}}</style>
 </head><body class="portal">
-<header class="portal-head"><div class="portal-top"><div><p class="eyebrow" style="color:#f3b5d0">MY MQA+</p><h1 style="margin:0">Welcome to your portal</h1><p>Your MQA+ connection, all in one place.</p></div><button class="signout" id="signout">Sign Out</button></div></header>
+<header class="portal-head"><div class="portal-top"><div><p class="eyebrow" style="color:#f3b5d0">MY MQA+</p><h1 id="welcome" style="margin:0">Welcome to your portal</h1><p>Your MQA+ connection, all in one place.</p></div><button class="signout" id="signout">Sign Out</button></div></header>
 <main class="dashboard">
-<section class="status-row"><div class="panel"><span class="member-state">Free Portal Account</span><h2 style="margin-top:14px">Your MQA+ account</h2><p style="color:var(--muted)">Your dashboard will personalize access based on your account role and active membership status.</p></div><div class="panel"><p class="eyebrow">MEMBERSHIP</p><h2>$25/month</h2><p style="color:var(--muted)">Includes two monthly Community Group Meetup activities and $5 off eligible MQA+ events.</p></div></section>
+<section class="status-row"><div class="panel"><span class="member-state" id="memberState">Loading account…</span><h2 id="accountName" style="margin-top:14px">Your MQA+ account</h2><p id="accountEmail" style="color:var(--muted)">Checking your secure session…</p><div class="account-meta" id="roles"></div></div><div class="panel"><p class="eyebrow">MEMBERSHIP</p><h2>$25/month</h2><p style="color:var(--muted)">Includes two monthly Community Group Meetup activities and $5 off eligible MQA+ events.</p></div></section>
 <section class="dash-grid">
 <article class="dash-card"><div class="icon">♥</div><h3>Membership</h3><p>Membership status, benefits and your digital membership experience.</p></article>
 <article class="dash-card"><div class="icon">◉</div><h3>Events & Community Groups</h3><p>Activities, meetup benefits and event registrations.</p></article>
@@ -18,10 +18,51 @@
 <article class="dash-card"><div class="icon">↗</div><h3>Jobs & Careers</h3><p>MQA+ and approved partner opportunities.</p></article>
 <article class="dash-card"><div class="icon">＋</div><h3>Resources & Support</h3><p>Community resources and support requests.</p></article>
 <article class="dash-card"><div class="icon">✓</div><h3>Training & Forms</h3><p>Training, certifications, waivers, agreements and acknowledgments.</p></article>
-<article class="dash-card locked"><div class="icon">▣</div><h3>Documents & Policies</h3><p>Policies, handbook and governance documents based on your access.</p></article>
-<article class="dash-card locked"><div class="icon">◆</div><h3>Employee & Leadership Center</h3><p>Restricted tools and information for authorized MQA+ roles.</p></article>
+<article class="dash-card locked" id="documentsCard"><div class="icon">▣</div><h3>Documents & Policies</h3><p>Policies, handbook and governance documents based on your access.</p><p class="restricted-note" id="documentsNote">Access is based on your MQA+ role.</p></article>
+<article class="dash-card locked" id="leadershipCard"><div class="icon">◆</div><h3>Employee & Leadership Center</h3><p>Restricted tools and information for authorized MQA+ roles.</p><p class="restricted-note" id="leadershipNote">Restricted access</p></article>
 <article class="dash-card"><div class="icon">●</div><h3>My Profile & Calendar</h3><p>Your profile, registrations, commitments, training and upcoming activity.</p></article>
 </section></main>
-<script>const token=localStorage.getItem("mqa_session");if(!token){location.replace("signin.html")}document.getElementById("signout").onclick=()=>{localStorage.removeItem("mqa_session");location.replace("signin.html")};</script>
+<script>
+const API="https://mqa-portal.luisxaviercruz.workers.dev";
+const token=localStorage.getItem("mqa_session");
+if(!token){location.replace("signin.html")}
+
+function prettyRole(role){return String(role||"").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
+
+async function loadAccount(){
+  try{
+    const r=await fetch(API+"/auth/me",{headers:{Authorization:"Bearer "+token}});
+    let d={};try{d=await r.json()}catch(_){}
+    if(!r.ok||!d.user){localStorage.removeItem("mqa_session");location.replace("signin.html");return}
+    const u=d.user;
+    const roles=Array.isArray(u.roles)?u.roles:[];
+    const first=u.first_name||"";
+    const full=[u.first_name,u.last_name].filter(Boolean).join(" ");
+    document.getElementById("welcome").textContent=first?"Welcome, "+first:"Welcome to your portal";
+    document.getElementById("accountName").textContent=full||"Your MQA+ account";
+    document.getElementById("accountEmail").textContent=u.email||"";
+    const roleBox=document.getElementById("roles");
+    roleBox.innerHTML="";
+    roles.forEach(role=>{const el=document.createElement("span");el.className="role-pill";el.textContent=prettyRole(role);roleBox.appendChild(el)});
+    const m=u.membership||{};
+    const active=m.active===true||String(m.status||"").toLowerCase()==="active";
+    document.getElementById("memberState").textContent=active?"Active MQA+ Member":"Free Portal Account";
+    const internal=roles.some(r=>["employee","board_leadership","administrator"].includes(r));
+    const docs=roles.some(r=>["employee","board_leadership","administrator","volunteer"].includes(r));
+    if(docs){document.getElementById("documentsCard").classList.remove("locked");document.getElementById("documentsNote").textContent="Available for your role"}
+    if(internal){document.getElementById("leadershipCard").classList.remove("locked");document.getElementById("leadershipNote").textContent="Available for your role"}
+  }catch(_){
+    document.getElementById("memberState").textContent="Unable to verify account";
+    document.getElementById("accountEmail").textContent="Please sign out and try again.";
+  }
+}
+
+document.getElementById("signout").onclick=async()=>{
+  try{await fetch(API+"/auth/logout",{method:"POST",headers:{Authorization:"Bearer "+token}})}catch(_){}
+  localStorage.removeItem("mqa_session");
+  location.replace("signin.html");
+};
+loadAccount();
+</script>
 </body>
 </html>
