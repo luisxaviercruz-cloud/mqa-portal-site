@@ -10,9 +10,9 @@
 </head><body class="portal">
 <header class="portal-head"><div class="portal-top"><div><p class="eyebrow" style="color:#f3b5d0">MY MQA+</p><h1 id="welcome" style="margin:0">Welcome to your portal</h1><p>Your MQA+ connection, all in one place.</p></div><button class="signout" id="signout">Sign Out</button></div></header>
 <main class="dashboard">
-<section class="status-row"><div class="panel"><span class="member-state" id="memberState">Loading account…</span><h2 id="accountName" style="margin-top:14px">Your MQA+ account</h2><p id="accountEmail" style="color:var(--muted)">Checking your secure session…</p><div class="account-meta" id="roles"></div></div><div class="panel"><p class="eyebrow">MEMBERSHIP</p><h2>$25/month</h2><p style="color:var(--muted)">Includes two monthly Community Group Meetup activities and $5 off eligible MQA+ events.</p></div></section>
+<section class="status-row"><div class="panel"><span class="member-state" id="memberState">Loading account…</span><h2 id="accountName" style="margin-top:14px">Your MQA+ account</h2><p id="accountEmail" style="color:var(--muted)">Checking your secure session…</p><div class="account-meta" id="roles"></div></div><div class="panel"><p class="eyebrow">MEMBERSHIP</p><h2>$25/month</h2><p style="color:var(--muted)">Includes two monthly Community Group Meetup activities and $5 off eligible MQA+ events.</p><a class="btn primary" id="membershipAction" href="membership.html" style="display:inline-flex;margin-top:14px">Become a Member</a></div></section>
 <section class="dash-grid">
-<article class="dash-card"><div class="icon">♥</div><h3>Membership</h3><p>Membership status, benefits and your digital membership experience.</p></article>
+<a class="dash-card" href="membership.html"><div class="icon">♥</div><h3>Membership</h3><p>Membership status, benefits and your digital membership experience.</p><p class="restricted-note" style="color:var(--purple)!important">View Membership →</p></a>
 <article class="dash-card"><div class="icon">◉</div><h3>Events & Community Groups</h3><p>Activities, meetup benefits and event registrations.</p></article>
 <article class="dash-card"><div class="icon">✦</div><h3>Volunteer Center</h3><p>Volunteer opportunities and your service-hour record.</p></article>
 <article class="dash-card"><div class="icon">↗</div><h3>Jobs & Careers</h3><p>MQA+ and approved partner opportunities.</p></article>
@@ -46,7 +46,7 @@ async function loadAccount(){
     roles.forEach(role=>{const el=document.createElement("span");el.className="role-pill";el.textContent=prettyRole(role);roleBox.appendChild(el)});
     const m=u.membership||{};
     const active=m.active===true||String(m.status||"").toLowerCase()==="active";
-    document.getElementById("memberState").textContent=active?"Active MQA+ Member":"Free Portal Account";
+    document.getElementById("memberState").textContent=active?"Active MQA+ Member":"Free Portal Account";\n    const membershipAction=document.getElementById("membershipAction");\n    if(membershipAction) membershipAction.textContent=active?"View Membership":"Become a Member";
     const internal=roles.some(r=>["employee","board_leadership","administrator"].includes(r));
     const docs=roles.some(r=>["employee","board_leadership","administrator","volunteer"].includes(r));
     if(docs){document.getElementById("documentsCard").classList.remove("locked");document.getElementById("documentsNote").textContent="Available for your role"}
