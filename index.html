@@ -52,6 +52,29 @@ async function loadAccount(){
         holder.appendChild(img);
       }
     }catch(_){}
+    // Load the same authenticated profile photo used by My Profile.
+    try{
+      const profileResponse=await fetch(API+"/profile",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+      if(profileResponse.ok){
+        const profileData=await profileResponse.json();
+        if(profileData.profile?.has_photo){
+          const photoResponse=await fetch(API+"/profile/photo",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+          if(photoResponse.ok){
+            const photoData=await photoResponse.json();
+            if(photoData.photo && /^data:image\/(jpeg|png|webp);base64,/.test(photoData.photo)){
+              const holder=document.querySelector(".account-photo");
+              holder.replaceChildren();
+              const img=document.createElement("img");
+              img.src=photoData.photo;
+              img.alt="Your profile photo";
+              img.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:16px";
+              holder.style.borderStyle="solid";
+              holder.appendChild(img);
+            }
+          }
+        }
+      }
+    }catch(error){console.warn("Profile photo could not be loaded",error)}
     const roles=Array.isArray(u.roles)?u.roles:[];
     const first=u.first_name||"";
     const full=[u.first_name,u.last_name].filter(Boolean).join(" ");
