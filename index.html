@@ -26,7 +26,7 @@
 <article class="dash-card"><div class="icon">✓</div><h3>Training & Forms</h3><p>Training, certifications, waivers, agreements and acknowledgments.</p></article>
 <article class="dash-card locked" id="documentsCard"><div class="icon">▣</div><h3>Documents & Policies</h3><p>Policies, handbook and governance documents based on your access.</p><p class="restricted-note" id="documentsNote">Access is based on your MQA+ role.</p></article>
 <article class="dash-card locked" id="leadershipCard"><div class="icon">◆</div><h3>Employee & Leadership Center</h3><p>Restricted tools and information for authorized MQA+ roles.</p><p class="restricted-note" id="leadershipNote">Restricted access</p></article>
-<article class="dash-card"><div class="icon">●</div><h3>My Profile & Calendar</h3><p>Your profile, registrations, commitments, training and upcoming activity.</p></article>
+<article class="dash-card"><div class="icon">●</div><h3>My Profile & Calendar</h3><p>Manage your profile photo, contact details and preferences. Calendar features are coming later.</p><p><a href="profile.html" style="display:inline-block;margin-top:12px;font-weight:800;color:#6c2f87">Open My Profile →</a></p></article>
 </section></main>
 <script>
 const API="https://mqa-portal.luisxaviercruz.workers.dev";
@@ -41,6 +41,17 @@ async function loadAccount(){
     let d={};try{d=await r.json()}catch(_){}
     if(!r.ok||!d.user){localStorage.removeItem("mqa_session");location.replace("signin.html");return}
     const u=d.user;
+    try{
+      const saved=JSON.parse(localStorage.getItem("mqa_local_profile_"+u.id)||"{}");
+      if(saved.photo){
+        const holder=document.querySelector(".account-photo");
+        holder.textContent="";
+        const img=document.createElement("img");
+        img.src=saved.photo;img.alt="Your profile photo";
+        img.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:16px";
+        holder.appendChild(img);
+      }
+    }catch(_){}
     const roles=Array.isArray(u.roles)?u.roles:[];
     const first=u.first_name||"";
     const full=[u.first_name,u.last_name].filter(Boolean).join(" ");
@@ -82,7 +93,7 @@ async function loadAccount(){
     if(docs){document.getElementById("documentsCard").classList.remove("locked");document.getElementById("documentsNote").textContent="Available for your role"}
     if(internal){document.getElementById("leadershipCard").classList.remove("locked");document.getElementById("leadershipNote").textContent="Available for your role"}
   }catch(_){
-    document.getElementById("memberState").textContent="Unable to verify account";
+    
     document.getElementById("accountEmail").textContent="Please sign out and try again.";
   }
 }
