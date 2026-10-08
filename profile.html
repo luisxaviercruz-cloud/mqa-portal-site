@@ -2,17 +2,82 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>My Profile | My MQA+</title><link rel="stylesheet" href="styles.css"><style>
 body{background:#f8f5fa}.profile-head{background:linear-gradient(135deg,#35164e,#6c2f87);color:white;padding:30px max(5vw,24px)}.profile-head a{color:#fff}.profile-wrap{max-width:850px;margin:28px auto;padding:0 20px 60px}.profile-panel{background:white;border:1px solid #e6dce9;border-radius:20px;padding:26px;margin-bottom:18px}.profile-panel h2{margin:0 0 14px}.photo-line{display:flex;gap:20px;align-items:center;flex-wrap:wrap}.photo{width:112px;height:112px;border-radius:18px;object-fit:cover;background:#f4eaf8;border:2px dashed #c9acd4}.photo-placeholder{width:112px;height:112px;border-radius:18px;background:#f4eaf8;display:flex;align-items:center;justify-content:center;color:#6c2f87;font-size:40px}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}label{display:block;font-weight:700;font-size:14px}input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #d7c8df;border-radius:10px;margin-top:7px;font:inherit}input[readonly]{background:#f7f4f8;color:#665b6b}.action{background:#6c2f87;color:white;border:0;border-radius:10px;padding:12px 18px;font-weight:800;cursor:pointer}.secondary{background:#eee4f2;color:#4d205e}.muted{color:#655b6b;font-size:13px;line-height:1.5}.status{font-weight:700;margin-top:12px}@media(max-width:620px){.form-grid{grid-template-columns:1fr}}
 </style></head><body><header class="profile-head"><a href="index.html">← Back to dashboard</a><h1>My Profile</h1><p>Manage your personal profile and photo.</p></header><main class="profile-wrap">
-<section class="profile-panel"><h2>Profile photo</h2><div class="photo-line"><div id="placeholder" class="photo-placeholder" aria-hidden="true">◉</div><img id="preview" class="photo" alt="Your profile photo" hidden><div><label for="photoInput">Choose a photo</label><input id="photoInput" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted">JPG, PNG or WebP, up to 1 MB. The photo is saved only in this browser for now.</p><button type="button" class="action secondary" id="removePhoto">Remove photo</button></div></div></section>
-<section class="profile-panel"><h2>Personal information</h2><form id="profileForm"><div class="form-grid"><label>First name<input id="firstName" readonly></label><label>Last name<input id="lastName" readonly></label><label>Email<input id="email" readonly></label><label>Preferred display name<input id="preferredName" maxlength="80" autocomplete="nickname"></label><label>Phone number<input id="phone" type="tel" maxlength="30" autocomplete="tel"></label></div><p class="muted">Your registered name and email are read from your secure MQA+ account. Preferred name and phone are saved on this device only until secure profile updates are enabled.</p><button class="action" type="submit">Save local profile</button><p id="status" class="status" role="status"></p></form></section></main>
+<section class="profile-panel"><h2>Profile photo</h2><div class="photo-line"><div id="placeholder" class="photo-placeholder" aria-hidden="true">◉</div><img id="preview" class="photo" alt="Your profile photo" hidden><div><label for="photoInput">Choose a photo</label><input id="photoInput" type="file" accept="image/png,image/jpeg,image/webp"><p class="muted">JPG, PNG or WebP. Photos are resized for secure account storage (up to 100 KB).</p><button type="button" class="action secondary" id="removePhoto">Remove photo</button></div></div></section>
+<section class="profile-panel"><h2>Personal information</h2><form id="profileForm"><div class="form-grid"><label>First name<input id="firstName" readonly></label><label>Last name<input id="lastName" readonly></label><label>Email<input id="email" readonly></label><label>Preferred display name<input id="preferredName" maxlength="80" autocomplete="nickname"></label><label>Phone number<input id="phone" type="tel" maxlength="30" autocomplete="tel"></label></div><p class="muted">Your registered name and email are read from your secure MQA+ account. Preferred name and phone are saved to your secure MQA+ account.</p><button class="action" type="submit">Save profile</button><p id="status" class="status" role="status"></p></form></section></main>
 <script>
 const API="https://mqa-portal.luisxaviercruz.workers.dev";
-const token=localStorage.getItem("mqa_session");if(!token)location.replace("signin.html");
-let key="";
-function showPhoto(data){const img=document.getElementById("preview");img.hidden=!data;document.getElementById("placeholder").hidden=!!data;if(data)img.src=data;else img.removeAttribute("src")}
-(async()=>{try{const r=await fetch(API+"/auth/me",{headers:{Authorization:"Bearer "+token}});if(!r.ok)throw Error("Session expired");const d=await r.json();if(!d.user)throw Error("Account unavailable");const u=d.user;key="mqa_local_profile_"+u.id;document.getElementById("firstName").value=u.first_name||"";document.getElementById("lastName").value=u.last_name||"";document.getElementById("email").value=u.email||"";const p=JSON.parse(localStorage.getItem(key)||"{}");document.getElementById("preferredName").value=p.preferredName||"";document.getElementById("phone").value=p.phone||"";showPhoto(p.photo||"");}catch(e){document.getElementById("status").textContent="Unable to load account. Please sign in again.";document.querySelectorAll("input,button").forEach(el=>el.disabled=true)}})();
-function save(p){if(!key)return;localStorage.setItem(key,JSON.stringify(p));document.getElementById("status").textContent="Saved on this device. Secure account syncing is not yet enabled."}
-function current(){try{return JSON.parse(localStorage.getItem(key)||"{}")}catch(_){return {}}}
-document.getElementById("profileForm").addEventListener("submit",e=>{e.preventDefault();save({...current(),preferredName:document.getElementById("preferredName").value.trim(),phone:document.getElementById("phone").value.trim()})});
-document.getElementById("photoInput").addEventListener("change",e=>{const file=e.target.files[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>1048576){document.getElementById("status").textContent="Choose a JPG, PNG or WebP image smaller than 1 MB.";return}const reader=new FileReader();reader.onload=()=>{try{save({...current(),photo:reader.result});showPhoto(reader.result)}catch(_){document.getElementById("status").textContent="This browser has insufficient storage for the photo."}};reader.readAsDataURL(file)});
-document.getElementById("removePhoto").addEventListener("click",()=>{save({...current(),photo:""});showPhoto("")});
+const token=localStorage.getItem("mqa_session");
+if(!token)location.replace("signin.html");
+const $=id=>document.getElementById(id);
+let key="",ready=false;
+const headers=()=>({Authorization:"Bearer "+token});
+function status(message){$("status").textContent=message}
+function showPhoto(data){$("preview").hidden=!data;$("placeholder").hidden=!!data;if(data)$("preview").src=data;else $("preview").removeAttribute("src")}
+async function api(path,options={}){
+ const response=await fetch(API+path,{...options,headers:{...headers(),...(options.headers||{})}});
+ let data;try{data=await response.json()}catch{throw Error("Unexpected server response")}
+ if(!response.ok||data.ok===false)throw Error(data.error||"Request failed");
+ return data;
+}
+function local(){try{return JSON.parse(localStorage.getItem(key)||"{}")}catch{return {}}}
+(async()=>{
+ try{
+  const account=await api("/auth/me");if(!account.user)throw Error("Account unavailable");
+  const u=account.user;key="mqa_local_profile_"+u.id;
+  $("firstName").value=u.first_name||"";$("lastName").value=u.last_name||"";$("email").value=u.email||"";
+  const remote=await api("/profile");const p=remote.profile||{};
+  const previous=local();
+  $("preferredName").value=p.preferred_name||previous.preferredName||"";
+  $("phone").value=p.phone||previous.phone||"";
+  if(p.has_photo){
+   try{const photo=await api("/profile/photo");showPhoto(photo.photo||"")}
+   catch{showPhoto(previous.photo||"");status("Profile loaded, but your saved photo could not be retrieved.")}
+  }else if(previous.photo){showPhoto(previous.photo);status("Your earlier photo is still on this browser. Choose it again to sync it to your account.")}
+  ready=true;
+ }catch(e){status("Could not connect to your secure profile: "+e.message+". Your information has not been changed.");document.querySelectorAll("input,button").forEach(el=>el.disabled=true)}
+})();
+$("profileForm").addEventListener("submit",async e=>{
+ e.preventDefault();if(!ready)return;
+ const button=e.submitter;button.disabled=true;status("Saving your profile…");
+ try{
+  await api("/profile",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({preferred_name:$("preferredName").value.trim(),phone:$("phone").value.trim()})});
+  status("Profile saved securely to your MQA+ account.");
+  localStorage.removeItem(key);
+ }catch(err){status("Unable to save: "+err.message+". Please try again.")}
+ finally{button.disabled=false}
+});
+function compressedPhoto(file){
+ return new Promise((resolve,reject)=>{
+  const image=new Image(),url=URL.createObjectURL(file);
+  image.onload=()=>{
+   URL.revokeObjectURL(url);
+   const canvas=document.createElement("canvas"),side=320,scale=Math.min(1,side/Math.max(image.width,image.height));
+   canvas.width=Math.round(image.width*scale);canvas.height=Math.round(image.height*scale);
+   canvas.getContext("2d").drawImage(image,0,0,canvas.width,canvas.height);
+   let data="";
+   for(const quality of [.82,.65,.48,.32]){data=canvas.toDataURL("image/jpeg",quality);if(data.length<130000)break}
+   if(data.length>130000)reject(Error("Photo is too large after resizing"));else resolve(data);
+  };
+  image.onerror=()=>{URL.revokeObjectURL(url);reject(Error("Invalid photo"))};
+  image.src=url;
+ });
+}
+$("photoInput").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file||!ready)return;
+ if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>1048576){status("Choose a JPG, PNG or WebP photo under 1 MB.");return}
+ $("photoInput").disabled=true;status("Uploading photo securely…");
+ try{
+  const photo=await compressedPhoto(file);
+  await api("/profile/photo",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({photo})});
+  showPhoto(photo);status("Photo saved to your MQA+ account.");
+  const p=local();delete p.photo;if(Object.keys(p).length)localStorage.setItem(key,JSON.stringify(p));else localStorage.removeItem(key);
+ }catch(err){status("Photo was not uploaded: "+err.message)}
+ finally{$("photoInput").disabled=false;$("photoInput").value=""}
+});
+$("removePhoto").addEventListener("click",async()=>{
+ if(!ready)return;$("removePhoto").disabled=true;status("Removing photo…");
+ try{await api("/profile/photo",{method:"DELETE"});showPhoto("");const p=local();delete p.photo;if(Object.keys(p).length)localStorage.setItem(key,JSON.stringify(p));else localStorage.removeItem(key);status("Photo removed from your MQA+ account.")}
+ catch(err){status("Unable to remove photo: "+err.message)}
+ finally{$("removePhoto").disabled=false}
+});
 </script></body></html>
