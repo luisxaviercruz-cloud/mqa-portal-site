@@ -46,7 +46,9 @@ async function loadAccount(){
     roles.forEach(role=>{const el=document.createElement("span");el.className="role-pill";el.textContent=prettyRole(role);roleBox.appendChild(el)});
     const m=u.membership||{};
     const active=m.active===true||String(m.status||"").toLowerCase()==="active";
-    document.getElementById("memberState").textContent=active?"Active MQA+ Member":"Free Portal Account";\n    const membershipAction=document.getElementById("membershipAction");\n    if(membershipAction) membershipAction.textContent=active?"View Membership":"Become a Member";
+    document.getElementById("memberState").textContent=active?"Active MQA+ Member":"Free Portal Account";
+    const membershipAction=document.getElementById("membershipAction");
+    if(membershipAction) membershipAction.textContent=active?"View Membership":"Become a Member";
     const internal=roles.some(r=>["employee","board_leadership","administrator"].includes(r));
     const docs=roles.some(r=>["employee","board_leadership","administrator","volunteer"].includes(r));
     if(docs){document.getElementById("documentsCard").classList.remove("locked");document.getElementById("documentsNote").textContent="Available for your role"}
