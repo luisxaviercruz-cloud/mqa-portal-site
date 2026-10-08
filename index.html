@@ -43,10 +43,12 @@ async function loadAccount(){
     document.getElementById("accountEmail").textContent=u.email||"";
     const roleBox=document.getElementById("roles");
     roleBox.innerHTML="";
-    roles.forEach(role=>{const el=document.createElement("span");el.className="role-pill";el.textContent=prettyRole(role);roleBox.appendChild(el)});
+
     const m=u.membership||{};
     const active=m.active===true||String(m.status||"").toLowerCase()==="active";
     document.getElementById("memberState").textContent=active?"Active MQA+ Member":"Free Portal Account";
+    const displayRoles=active?["member",...roles.filter(role=>role!=="member")]:roles.filter(role=>role!=="member");
+    displayRoles.forEach(role=>{const el=document.createElement("span");el.className="role-pill";el.textContent=prettyRole(role);roleBox.appendChild(el)});
     const membershipAction=document.getElementById("membershipAction");
     if(membershipAction) membershipAction.textContent=active?"View Membership":"Become a Member";
     const internal=roles.some(r=>["employee","board_leadership","administrator"].includes(r));
