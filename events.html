@@ -23,7 +23,7 @@
 <article class="panel"><span class="tag">August 28, 2027 · 5:30–11 PM</span><h3>Blue Moon White Soirée Gala</h3><p>Brown Joy Under One Moon. Venue and registration details are to be announced.</p><a class="button" href="https://www.mcultural.org/events.html#upcoming-events" target="_blank" rel="noopener">View Event Details ↗</a></article>
 </div><p class="status">These event details come from the public MQA+ events page. “View Event Details” does not register you or reserve a place.</p>
 <h2 class="section-title">My Registrations</h2>
-<div class="empty">Your registered activities will appear here once registration records are connected to your My MQA+ account. Until then, keep the confirmation email or ticket from your registration provider.</div>
+<div id="myRegistrations" class="empty" role="status" aria-live="polite">Checking your registrations…</div>
 <h2 class="section-title">How Membership Benefits Work</h2>
 <div class="notice">Active members are eligible for two Community Group Meetup activities per month and $5 off eligible MQA+ events. Discounts and included activities are not applied automatically on this page yet; follow the instructions on the applicable event registration form. Event tickets and QR codes remain with the registration provider.</div>
 <section class="panel" id="zeffyAdminTools" hidden style="margin-top:34px"><h2>Administrator Tools</h2><p>Test the Zeffy API connection without creating payments or registrations.</p><button id="zeffyTestButton" class="button" type="button" style="border:0;cursor:pointer">Test Zeffy Connection</button> <button id="zeffyEventsTestButton" class="button" type="button" style="border:0;cursor:pointer">Test Zeffy Events</button><p id="zeffyEventsTestResult" class="status" role="status" aria-live="polite"></p><div id="zeffyEventsTestList" class="status"></div><p id="zeffyTestResult" class="status" role="status" aria-live="polite"></p></section><dialog id="meetupRegistrationDialog" class="meetup-modal" aria-labelledby="meetupModalTitle"><div class="meetup-modal-header"><h2 id="meetupModalTitle">Community Group Meetup Registration</h2><button type="button" id="closeMeetupRegistration" aria-label="Close registration">×</button></div><div class="meetup-modal-content"><iframe title="Zeffy Community Group Meetup registration" data-src="https://www.zeffy.com/embed/ticketing/community-group-meetup" allow="payment *"></iframe><p class="status">If the form does not load, <a href="https://www.zeffy.com/embed/ticketing/community-group-meetup" target="_blank" rel="noopener noreferrer">open Zeffy registration directly</a>.</p></div></dialog>
@@ -32,6 +32,29 @@
 const API="https://mqa-portal.luisxaviercruz.workers.dev",token=localStorage.getItem("mqa_session");
 if(!token)location.replace("signin.html");
 (async()=>{try{const r=await fetch(API+"/auth/me",{headers:{Authorization:"Bearer "+token}});if(r.status===401){localStorage.removeItem("mqa_session");location.replace("signin.html");return}if(!r.ok)throw Error("Session unavailable");const d=await r.json();const m=d.user?.membership||d.membership||d.data?.membership;const active=m&&(m.active===true||String(m.status||"").toLowerCase()==="active");const roles=[...(Array.isArray(d.user?.roles)?d.user.roles:[]),...(Array.isArray(d.roles)?d.roles:[])];document.getElementById("zeffyAdminTools").hidden=!roles.some(v=>String(typeof v==="string"?v:v?.name||"").toLowerCase()==="administrator");document.getElementById("benefitsLoading").hidden=true;document.getElementById("benefits").hidden=!active;document.getElementById("benefitStatus").textContent=active?"Your membership is active.":"Membership benefits are available to active members."; }catch(e){document.getElementById("benefitsLoading").textContent="Membership status could not be loaded. Check your dashboard for the latest status."}})();
+async function loadMyRegistrations(){
+ const box=document.getElementById("myRegistrations");
+ try{
+  const response=await fetch(API+"/registrations",{headers:{Authorization:"Bearer "+token}});
+  if(response.status===404||response.status===501){box.textContent="Automatic registration history is being connected. Until then, please keep your Zeffy confirmation email or ticket.";return}
+  if(response.status===401){box.textContent="Please sign in again to view your registrations.";return}
+  if(!response.ok)throw Error("Unable to load registrations");
+  const data=await response.json();
+  const records=Array.isArray(data)?data:Array.isArray(data.registrations)?data.registrations:null;
+  if(!records)throw Error("Unexpected response");
+  if(!records.length){box.textContent="No confirmed registrations are linked to your account yet. Registrations completed with a different email may not appear here.";return}
+  const list=document.createElement("div");list.className="grid";
+  for(const entry of records){
+   const item=document.createElement("article");item.className="panel";
+   const heading=document.createElement("h3");heading.textContent=String(entry.event_name||entry.title||"Community activity");item.appendChild(heading);
+   const info=document.createElement("p");info.textContent=[entry.event_date||entry.date,entry.status].filter(Boolean).join(" · ");item.appendChild(info);
+   if(entry.confirmation_url&&/^https:\/\//.test(entry.confirmation_url)){const link=document.createElement("a");link.className="button";link.textContent="View Confirmation ↗";link.href=entry.confirmation_url;link.target="_blank";link.rel="noopener noreferrer";item.appendChild(link)}
+   list.appendChild(item);
+  }
+  box.className="";box.replaceChildren(list);
+ }catch(e){box.textContent="Registrations could not be loaded right now. Your Zeffy confirmation email remains your registration record."}
+}
+loadMyRegistrations();
 document.getElementById("zeffyTestButton").addEventListener("click",async()=>{const b=document.getElementById("zeffyTestButton"),o=document.getElementById("zeffyTestResult");b.disabled=true;o.textContent="Testing connection…";try{const r=await fetch(API+"/admin/zeffy-test",{headers:{Authorization:"Bearer "+token}}),d=await r.json();o.textContent=r.ok&&d.connected===true?"Connected to Zeffy successfully.":"Connection not confirmed. Portal HTTP "+r.status+(d.zeffy_status?", Zeffy HTTP "+d.zeffy_status:"")+(d.error?": "+String(d.error).slice(0,120):"");}catch(e){o.textContent="Could not complete test. Please try again."}finally{b.disabled=false}});
 document.getElementById("zeffyEventsTestButton").addEventListener("click",async()=>{
  const b=document.getElementById("zeffyEventsTestButton"),o=document.getElementById("zeffyEventsTestResult"),list=document.getElementById("zeffyEventsTestList");
