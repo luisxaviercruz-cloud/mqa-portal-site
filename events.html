@@ -35,7 +35,7 @@ if(!token)location.replace("signin.html");
 async function loadMyRegistrations(){
  const box=document.getElementById("myRegistrations");
  try{
-  const response=await fetch(API+"/registrations",{headers:{Authorization:"Bearer "+token}});
+  const response=await fetch(API+"/api/my-registrations",{headers:{Authorization:"Bearer "+token}});
   if(response.status===404||response.status===501){box.textContent="Automatic registration history is being connected. Until then, please keep your Zeffy confirmation email or ticket.";return}
   if(response.status===401){box.textContent="Please sign in again to view your registrations.";return}
   if(!response.ok)throw Error("Unable to load registrations");
@@ -47,7 +47,7 @@ async function loadMyRegistrations(){
   for(const entry of records){
    const item=document.createElement("article");item.className="panel";
    const heading=document.createElement("h3");heading.textContent=String(entry.event_name||entry.title||"Community activity");item.appendChild(heading);
-   const info=document.createElement("p");info.textContent=[entry.event_date||entry.date,entry.status].filter(Boolean).join(" · ");item.appendChild(info);
+   const info=document.createElement("p");info.textContent=[entry.starts_at?new Date(entry.starts_at).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"}):entry.event_date||entry.date,entry.registration_status||entry.status].filter(Boolean).join(" · ");item.appendChild(info);
    if(entry.confirmation_url&&/^https:\/\//.test(entry.confirmation_url)){const link=document.createElement("a");link.className="button";link.textContent="View Confirmation ↗";link.href=entry.confirmation_url;link.target="_blank";link.rel="noopener noreferrer";item.appendChild(link)}
    list.appendChild(item);
   }
