@@ -26,7 +26,7 @@
 <div id="myRegistrations" class="empty" role="status" aria-live="polite">Checking your registrations…</div>
 <h2 class="section-title">How Membership Benefits Work</h2>
 <div class="notice">Active members are eligible for two Community Group Meetup activities per month and $5 off eligible MQA+ events. Discounts and included activities are not applied automatically on this page yet; follow the instructions on the applicable event registration form. Event tickets and QR codes remain with the registration provider.</div>
-<section class="panel" id="zeffyAdminTools" hidden style="margin-top:34px"><h2>Administrator Tools</h2><p>Test the Zeffy API connection without creating payments or registrations.</p><button id="zeffyTestButton" class="button" type="button" style="border:0;cursor:pointer">Test Zeffy Connection</button> <button id="zeffyEventsTestButton" class="button" type="button" style="border:0;cursor:pointer">Test Zeffy Events</button> <button id="verifyMeetupPaymentButton" class="button" type="button" style="border:0;cursor:pointer">Verify Meetup Payment</button><button id="linkMeetupRegistrationButton" class="button" type="button" style="border:0;cursor:pointer">Link Verified Registration</button><p id="linkMeetupRegistrationResult" class="status" role="status" aria-live="polite"></p><p id="verifyMeetupPaymentResult" class="status" role="status" aria-live="polite"></p><p id="zeffyEventsTestResult" class="status" role="status" aria-live="polite"></p><div id="zeffyEventsTestList" class="status"></div><p id="zeffyTestResult" class="status" role="status" aria-live="polite"></p></section><dialog id="meetupRegistrationDialog" class="meetup-modal" aria-labelledby="meetupModalTitle"><div class="meetup-modal-header"><h2 id="meetupModalTitle">Community Group Meetup Registration</h2><button type="button" id="closeMeetupRegistration" aria-label="Close registration">×</button></div><div class="meetup-modal-content"><iframe title="Zeffy Community Group Meetup registration" data-src="https://www.zeffy.com/embed/ticketing/community-group-meetup" allow="payment *"></iframe><p class="status">If the form does not load, <a href="https://www.zeffy.com/embed/ticketing/community-group-meetup" target="_blank" rel="noopener noreferrer">open Zeffy registration directly</a>.</p></div></dialog>
+<section class="panel" id="zeffyAdminTools" hidden style="margin-top:34px"><h2>Administrator Tools</h2><p>Test the Zeffy API connection without creating payments or registrations.</p><button id="zeffyTestButton" class="button" type="button" style="border:0;cursor:pointer">Test Zeffy Connection</button> <button id="zeffyEventsTestButton" class="button" type="button" style="border:0;cursor:pointer">Test Zeffy Events</button> <button id="verifyMeetupPaymentButton" class="button" type="button" style="border:0;cursor:pointer">Verify Meetup Payment</button><button id="linkMeetupRegistrationButton" class="button" type="button" style="border:0;cursor:pointer">Link Verified Registration</button> <button id="zeffyReviewButton" class="button" type="button" style="border:0;cursor:pointer">Review Flagged Registrations</button><p id="zeffyReviewStatus" class="status" role="status" aria-live="polite"></p><div id="zeffyReviewList" class="status"></div><p id="linkMeetupRegistrationResult" class="status" role="status" aria-live="polite"></p><p id="verifyMeetupPaymentResult" class="status" role="status" aria-live="polite"></p><p id="zeffyEventsTestResult" class="status" role="status" aria-live="polite"></p><div id="zeffyEventsTestList" class="status"></div><p id="zeffyTestResult" class="status" role="status" aria-live="polite"></p></section><dialog id="meetupRegistrationDialog" class="meetup-modal" aria-labelledby="meetupModalTitle"><div class="meetup-modal-header"><h2 id="meetupModalTitle">Community Group Meetup Registration</h2><button type="button" id="closeMeetupRegistration" aria-label="Close registration">×</button></div><div class="meetup-modal-content"><iframe title="Zeffy Community Group Meetup registration" data-src="https://www.zeffy.com/embed/ticketing/community-group-meetup" allow="payment *"></iframe><p class="status">If the form does not load, <a href="https://www.zeffy.com/embed/ticketing/community-group-meetup" target="_blank" rel="noopener noreferrer">open Zeffy registration directly</a>.</p></div></dialog>
 </main>
 <script>
 const API="https://mqa-portal.luisxaviercruz.workers.dev",token=localStorage.getItem("mqa_session");
@@ -136,5 +136,27 @@ document.getElementById("zeffyEventsTestButton").addEventListener("click",async(
   list.appendChild(ul);
  }catch(e){o.textContent="Could not retrieve event test results. Please try again."}
  finally{b.disabled=false}
+});
+document.getElementById("zeffyReviewButton").addEventListener("click",async()=>{
+ const button=document.getElementById("zeffyReviewButton");
+ const status=document.getElementById("zeffyReviewStatus");
+ const list=document.getElementById("zeffyReviewList");
+ button.disabled=true;status.textContent="Loading flagged registrations…";list.replaceChildren();
+ try{
+  const response=await fetch(API+"/admin/zeffy-registration-review",{headers:{Authorization:"Bearer "+token}});
+  const data=await response.json();
+  if(!response.ok||data.ok!==true){status.textContent="Could not load registration reviews (HTTP "+response.status+").";return}
+  const records=Array.isArray(data.registrations)?data.registrations:[];
+  status.textContent=records.length?records.length+" registration notification(s) require review. No changes have been made.":"No flagged registrations found.";
+  if(!records.length)return;
+  const ul=document.createElement("ul");
+  for(const record of records){
+   const li=document.createElement("li");
+   li.textContent="Webhook #"+String(record.webhook_id??"unknown")+" | "+String(record.event_type??"Unknown event")+" | Reason: "+String(record.last_error??"Not specified")+" | Updated: "+String(record.updated_at??"Unknown");
+   ul.appendChild(li);
+  }
+  list.appendChild(ul);
+ }catch(error){status.textContent="Unable to load registration reviews. Please try again."}
+ finally{button.disabled=false}
 });
 </script><script>(function(){const dialog=document.getElementById("meetupRegistrationDialog");const frame=dialog.querySelector("iframe");document.getElementById("openMeetupRegistration").addEventListener("click",()=>{if(!frame.src)frame.src=frame.dataset.src;dialog.showModal()});document.getElementById("closeMeetupRegistration").addEventListener("click",()=>dialog.close());dialog.addEventListener("click",e=>{if(e.target===dialog)dialog.close()})})();</script></body></html>
