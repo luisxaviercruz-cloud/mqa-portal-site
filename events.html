@@ -152,7 +152,33 @@ document.getElementById("zeffyReviewButton").addEventListener("click",async()=>{
   const ul=document.createElement("ul");
   for(const record of records){
    const li=document.createElement("li");
-   li.textContent="Webhook #"+String(record.webhook_id??"unknown")+" | "+String(record.event_type??"Unknown event")+" | Reason: "+String(record.last_error??"Not specified")+" | Updated: "+String(record.updated_at??"Unknown");
+   const details=document.createElement("span");
+   details.textContent="Webhook #"+String(record.webhook_id??"unknown")+" | "+String(record.event_type??"Unknown event")+" | Reason: "+String(record.last_error??"Not specified")+" | Updated: "+String(record.updated_at??"Unknown")+" ";
+   li.appendChild(details);
+   const id=Number(record.webhook_id);
+   if(Number.isSafeInteger(id)&&id>0){
+    const recheck=document.createElement("button");
+    recheck.type="button";recheck.className="button";recheck.textContent="Recheck #"+id;
+    recheck.style.cssText="border:0;cursor:pointer;margin:6px 0 10px 8px;padding:8px 12px";
+    recheck.addEventListener("click",async()=>{
+     if(!confirm("Recheck webhook #"+id+" with Zeffy? This may link a verified registration or change its processing status."))return;
+     recheck.disabled=true;recheck.textContent="Rechecking #"+id+"…";
+     status.textContent="Rechecking webhook #"+id+" with Zeffy. Other notifications are untouched.";
+     try{
+      const response=await fetch(API+"/admin/zeffy-recheck",{
+       method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+       body:JSON.stringify({webhook_id:id})
+      });
+      const data=await response.json();
+      if(!response.ok||data.ok!==true){status.textContent="Recheck #"+id+" unsuccessful (HTTP "+response.status+"): "+String(data.error||"Request failed.");return}
+      const outcome=String(data.processing_status||"unknown");
+      status.textContent="Webhook #"+id+" recheck result: "+outcome+(data.review_reason?" — "+String(data.review_reason):"")+". Refresh the list to see remaining flagged records.";
+      recheck.textContent="Rechecked #"+id+": "+outcome;
+      recheck.disabled=true;
+     }catch(error){status.textContent="Could not recheck webhook #"+id+". No result confirmed.";recheck.disabled=false;recheck.textContent="Recheck #"+id}
+    });
+    li.appendChild(recheck);
+   }
    ul.appendChild(li);
   }
   list.appendChild(ul);
