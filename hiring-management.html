@@ -108,6 +108,11 @@ async function saveApplication(){if(formLoading)throw Error('Wait for the applic
  heading(panes.reviews,'Application Review');
  const note=document.createElement('p');note.className='muted';note.textContent='Choose Review from an applicant record to open its details here.';
  panes.reviews.append(note,document.getElementById('review'));
+ // Remove legacy headings left behind when moving their content into the sidebar views.
+ for(const node of [...root.children]){
+  if(node===layout || node.id==='career-metrics')continue;
+  if(node.tagName==='H3' && /^(Saved Opportunities|Applicants|Application Review)$/.test(node.textContent.trim()))node.remove();
+ }
  layout.append(aside,content);root.append(layout);
  function show(id){
   if(!panes[id])id='overview';
