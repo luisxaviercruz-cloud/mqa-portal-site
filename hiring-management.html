@@ -72,7 +72,7 @@ async function saveApplication(){if(formLoading)throw Error('Wait for the applic
  const aside=document.createElement('aside');aside.className='hiring-side';aside.setAttribute('aria-label','Hiring workspace navigation');
  const content=document.createElement('div');
  const views=[
-  ['overview','Overview'],['postings','Opportunity Register'],['create','Create / Edit Posting'],['applicants','Applicants'],['reviews','Application Review']
+  ['overview','Overview'],['library','Position & Department Library'],['postings','Opportunity Register'],['create','Create / Edit Posting'],['applicants','Applicants'],['reviews','Application Review']
  ];
  const panes={};
  for(const [id,label] of views){
@@ -86,6 +86,7 @@ async function saveApplication(){if(formLoading)throw Error('Wait for the applic
  overviewPanel.innerHTML='<h2>Workspace</h2><p class="muted">Manage your opportunities and review applications from one organized portal.</p>';
  const tiles=document.createElement('div');tiles.className='hiring-tiles';
  for(const [id,title,description] of [
+  ['library','Position & Department Library','Browse official departments and role-specific standard descriptions.'],
   ['postings','Opportunity Register','Search, review, publish, close, or archive your positions.'],
   ['create','Create New Posting','Prepare employment, internship, or board leadership opportunities.'],
   ['applicants','Applicants','View applications and their current review status.'],
@@ -99,6 +100,8 @@ async function saveApplication(){if(formLoading)throw Error('Wait for the applic
  }
  overviewPanel.append(tiles);panes.overview.append(overviewPanel);
  function heading(pane,title){const h=document.createElement('h2');h.textContent=title;pane.append(h)}
+ heading(panes.library,'Position & Department Library');
+ const libraryMount=document.createElement('div');libraryMount.id='mqa-library-mount';panes.library.append(libraryMount);
  heading(panes.postings,'Opportunity Register');
  panes.postings.append(document.getElementById('career-toolbar'),document.getElementById('managed'));
  heading(panes.create,'Create / Edit Posting');
@@ -162,5 +165,23 @@ const originalEdit=window.careerEdit;
 if(typeof originalEdit==='function')window.careerEdit=function(o){originalEdit(o);const found=roles.find(r=>r[2]===o.title&&r[1]===o.type);if(found){dept.value=found[0];updateTypes();type.value=found[1];updatePositions();pos.value=found[2];applyTemplate();for(const key of ['schedule','pay_range','department']){const sec=(()=>{try{return JSON.parse(o.sections_json||'{}')}catch{return {}}})();if(sec[key])$('section-'+key).value=sec[key]}}else{$('library-notice').textContent='This existing posting is not in the standard library. Select a library position before saving.'}};
 form.addEventListener('reset',()=>setTimeout(()=>{dept.selectedIndex=0;updateTypes()},0));
 form.addEventListener('submit',e=>{const match=roles.find(r=>r[0]===dept.value&&r[1]===type.value&&r[2]===pos.value);if(!match){e.preventDefault();e.stopImmediatePropagation();alert('Select a standard MQA+ position before saving.');return}const t=getTemplate();$('title').value=pos.value;$('type').value=type.value;for(const [key,value] of Object.entries(t))$('section-'+key).value=value;if(type.value==='volunteer'||type.value==='board')$('compensation').value='unpaid'},true);
+})();
+</script><style id="mqa-library-manager-css">#mqa-library-mount .lib-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}#mqa-library-mount .lib-tabs button{background:#f0e7f5;color:#54266f}#mqa-library-mount .lib-tabs button.active{background:#54266f;color:white}#mqa-library-mount .lib-entry{border:1px solid #e6dce9;border-radius:12px;padding:14px;margin:9px 0;background:#fff}#mqa-library-mount .lib-entry summary{font-weight:700;cursor:pointer}#mqa-library-mount .lib-entry pre{font:inherit;white-space:pre-wrap;line-height:1.5}#mqa-library-mount .lib-note{background:#f6f0fa;padding:13px;border-radius:10px}#mqa-library-mount .lib-filter{max-width:380px}</style>
+<script id="mqa-library-manager-js">
+(()=>{'use strict';const mount=document.getElementById('mqa-library-mount');if(!mount)return;
+const source=document.getElementById('mqa-position-library-script')?.textContent||'';
+const rolesMatch=source.match(/const roles=(\[.*?\]);\s*const \$/s);
+const dutiesMatch=source.match(/const POSITION_RESPONSIBILITIES=(\{.*?\});\s*const getTemplate/s);
+if(!rolesMatch||!dutiesMatch){mount.textContent='The position library could not be loaded.';return}
+let roles,duties;try{roles=JSON.parse(rolesMatch[1]);duties=JSON.parse(dutiesMatch[1])}catch{mount.textContent='The position library could not be parsed.';return}
+const departments=[...new Set(roles.map(r=>r[0]))];
+const intro=document.createElement('p');intro.className='muted';intro.textContent='Central register of MQA+ departments and 32 standardized position templates. This is the current built-in catalog; leadership approval and database editing are not enabled yet.';
+const tabs=document.createElement('div');tabs.className='lib-tabs';
+const content=document.createElement('div');const search=document.createElement('input');search.className='lib-filter';search.placeholder='Search positions or departments';search.setAttribute('aria-label','Search position library');
+mount.append(intro,tabs,search,content);
+let current='positions';
+const labels={employment:'Employment',internship:'Internship',volunteer:'Volunteer',board:'Board Member'};
+function draw(){content.replaceChildren();const q=search.value.trim().toLowerCase();if(current==='positions'){const filtered=roles.filter(r=>r.join(' ').toLowerCase().includes(q));const count=document.createElement('p');count.className='muted';count.textContent=filtered.length+' of '+roles.length+' standard positions';content.append(count);for(const [dept,type,title] of filtered){const detail=document.createElement('details');detail.className='lib-entry';const summary=document.createElement('summary');summary.textContent=title+' · '+labels[type]+' · '+dept;detail.append(summary);const desc=document.createElement('p');desc.textContent=title+' serves MQA+ within '+dept+'.';const responsibility=document.createElement('pre');responsibility.textContent='Key responsibilities: '+(duties[title]||'Support assigned organizational activities.')+'\n\nBaseline qualifications: Commitment to MQA+ mission, reliable communication, and role-specific training.';const note=document.createElement('p');note.className='muted';note.textContent='Status: Standard draft — leadership approval pending';detail.append(desc,responsibility,note);content.append(detail)}}else if(current==='departments'){for(const dept of departments.filter(d=>d.toLowerCase().includes(q)||roles.some(r=>r[0]===d&&r[2].toLowerCase().includes(q)))){const box=document.createElement('div');box.className='lib-entry';const h=document.createElement('h3');h.textContent=dept;const p=document.createElement('p');const members=roles.filter(r=>r[0]===dept);p.textContent=members.length+' position templates · '+[...new Set(members.map(r=>labels[r[1]]))].join(', ');box.append(h,p);content.append(box)}}else{const p=document.createElement('div');p.className='lib-note';p.textContent='Proposed workflow: Draft → Leadership Review → Approved → Active. Approval permissions, version history, and persistent edits require backend integration. Existing built-in templates remain drafts until formally approved.';content.append(p)}}
+for(const [id,label] of [['positions','Positions'],['departments','Departments'],['approvals','Approvals']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=()=>{current=id;for(const btn of tabs.children)btn.classList.toggle('active',btn===b);search.value='';draw()};tabs.append(b)}tabs.firstElementChild.classList.add('active');search.addEventListener('input',draw);draw();
 })();
 </script></body></html>
