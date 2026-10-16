@@ -38,7 +38,7 @@ const API="https://mqa-portal.luisxaviercruz.workers.dev";
 const token=localStorage.getItem("mqa_session");
 if(!token){location.replace("signin.html")}
 
-function prettyRole(role){return String(role||"").replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}
+function prettyRole(role){const key=String(role||"").trim().toLowerCase().replace(/[\\s-]+/g,"_");const titles={ceo:"Founder, Executive & CEO",coo:"Co-Founder & COO",executive_director:"Executive Director",founder:"Founder",board_chair:"Board Chair",board_vice_chair:"Board Vice Chair",board_secretary:"Board Secretary",board_treasurer:"Board Treasurer",board_member:"Board Member",system_administrator:"System Administrator",administrator:"Administrator",department_director:"Department Director",coordinator:"Coordinator",ambassador:"Ambassador"};return titles[key]||String(role||"").replaceAll("_"," ").replace(/\\b\\w/g,c=>c.toUpperCase())}
 
 async function loadAccount(){
   try{
