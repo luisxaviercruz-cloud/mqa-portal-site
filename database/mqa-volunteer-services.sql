@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS mqa_volunteer_service_hours (
  volunteer_user_id TEXT NOT NULL REFERENCES users(id),
  assignment_id TEXT REFERENCES mqa_volunteer_assignments(id),
  activity_name TEXT NOT NULL,
+ service_category TEXT NOT NULL CHECK(service_category IN ('event','office_admin','other')),
  service_date TEXT NOT NULL,
  minutes_served INTEGER NOT NULL CHECK(minutes_served > 0 AND minutes_served <= 1440),
  notes TEXT,
@@ -32,6 +33,7 @@ CREATE TABLE IF NOT EXISTS mqa_volunteer_service_hours (
  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_mqa_vol_hours_user_date ON mqa_volunteer_service_hours(volunteer_user_id,service_date);
+CREATE INDEX IF NOT EXISTS idx_mqa_vol_hours_category ON mqa_volunteer_service_hours(volunteer_user_id,service_category,status);
 CREATE INDEX IF NOT EXISTS idx_mqa_vol_hours_review ON mqa_volunteer_service_hours(status,submitted_at);
 CREATE TABLE IF NOT EXISTS mqa_volunteer_audit (
  id TEXT PRIMARY KEY,
@@ -47,6 +49,9 @@ CREATE INDEX IF NOT EXISTS idx_mqa_vol_audit_volunteer ON mqa_volunteer_audit(vo
 -- Backend implementation requirements:
 -- GET /volunteer-api/me returns only authenticated user's assignments/hours.
 -- POST /volunteer-api/hours derives volunteer_user_id from verified session, not request body.
+-- Require service_category = event, office_admin, or other. Never infer from activity text.
+-- Reject overlapping duplicate submissions for same volunteer/assignment/date/time where applicable.
+-- GET /volunteer-api/me includes service_category per record for accurate thermometer totals.
 -- POST /volunteer-api/hours/:id/review requires authorized coordinator/director;
 -- reject self-approval and enforce department scope; record all decisions in audit.
 -- Approval must use atomic status transition submitted -> approved/rejected.
