@@ -15,6 +15,7 @@ export async function handleVolunteerApi(request,env,{authenticate,canManageVolu
  const actor=await authenticate(request,env);if(!actor?.id)return fail('Authentication required',401);
  const url=new URL(request.url),path=url.pathname,db=env.DB;
  try{
+  if(path==='/volunteer-api/capabilities'&&request.method==='GET')return json({can_submit_hours:true});
   if(path==='/volunteer-api/me'&&request.method==='GET'){
    const [a,h]=await Promise.all([
     db.prepare('SELECT id,department,activity_name,description,starts_at,ends_at,status FROM mqa_volunteer_assignments WHERE volunteer_user_id=? ORDER BY starts_at DESC LIMIT 200').bind(actor.id).all(),
