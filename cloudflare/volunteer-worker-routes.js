@@ -44,9 +44,14 @@ export async function handleVolunteerApi(request,env,{authenticate,canManageVolu
    if(!row.department)return fail('Department assignment required for review',403);
    if(!await canManageVolunteer(actor,row.volunteer_user_id,row.department,env))return fail('Not authorized',403);
    if(row.status!=='submitted')return fail('Already reviewed',409);
-   const update=await db.prepare("UPDATE mqa_volunteer_service_hours SET status=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP,review_note=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='submitted'").bind(decision,actor.id,note,match[1]).run();
-   if(update.meta?.changes!==1)return fail('Already reviewed',409);
-   await db.prepare('INSERT INTO mqa_volunteer_audit (id,actor_user_id,volunteer_user_id,hours_id,action,details_json) VALUES (?,?,?,?,?,?)').bind(uuid(),actor.id,row.volunteer_user_id,match[1],'hours_'+decision,JSON.stringify({note})).run();
+   // D1 batch executes statements in a transaction. changes() gates the audit insert
+   // on this request's conditional update, preventing an audit event on a stale review.
+   const results=await db.batch([
+    db.prepare("UPDATE mqa_volunteer_service_hours SET status=?,reviewed_by=?,reviewed_at=CURRENT_TIMESTAMP,review_note=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status='submitted'").bind(decision,actor.id,note,match[1]),
+    db.prepare('INSERT INTO mqa_volunteer_audit (id,actor_user_id,volunteer_user_id,hours_id,action,details_json) SELECT ?,?,?,?,?,? WHERE changes()=1').bind(uuid(),actor.id,row.volunteer_user_id,match[1],'hours_'+decision,JSON.stringify({note}))
+   ]);
+   if(results[0]?.meta?.changes!==1)return fail('Already reviewed',409);
+   if(results[1]?.meta?.changes!==1)return fail('Review audit could not be confirmed',500);
    return json({id:match[1],status:decision});
   }
   return fail('Route not found',404);
