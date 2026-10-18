@@ -39,3 +39,11 @@ Each hours record includes `id`, `activity_name`, `service_category`, `service_d
 4. Test with nonproduction accounts and verify self-review denial, cross-department denial, race-safe approval, duplicate handling and accurate totals.
 5. Enable volunteer submission and reviewer controls only after verified deployment.
 6. Perform full onboarding/approval/invitation end-to-end testing at the end of portal development, as planned.
+
+## October 2026 combined implementation progress
+- Personal recording and history page: `volunteer-hours.html`; approved totals and assignments: `volunteer-dashboard.html`.
+- Separate reviewer UI: `volunteer-hours-review.html`. It only displays server-returned review records; it is not linked to general volunteer navigation.
+- Prepared `GET /volunteer-api/review-queue` filters assignment-linked submissions through the server's verified `canManageVolunteer` authorization callback and excludes self-review. It does **not** expose all submitted records.
+- **Critical unresolved routing issue:** personal hour submissions currently permit `assignment_id: null`, but the review queue and review action require a department from an assignment. These submissions cannot be approved until a verified server-side department routing policy is added (e.g. a trusted reviewer department resolver and schema migration). Never accept a user-supplied department as authoritative. Do not activate production submissions until this is resolved.
+- **Deployment blockers:** inspect the live Worker source, D1 `users` table and actual department authorization helper; execute the reviewed migration; integrate the additive route handler; deploy and verify API capabilities. GitHub commits alone do not activate any of these features.
+- Full onboarding/invitation end-to-end testing remains deferred as agreed.
