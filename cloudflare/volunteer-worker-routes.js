@@ -15,18 +15,22 @@ export async function handleVolunteerApi(request,env,{authenticate,canManageVolu
  const actor=await authenticate(request,env);if(!actor?.id)return fail('Authentication required',401);
  const url=new URL(request.url),path=url.pathname,db=env.DB;
  try{
-  if(path==='/volunteer-api/capabilities'&&request.method==='GET')return json({can_submit_hours:true});
+  if(path==='/volunteer-api/capabilities'&&request.method==='GET'){
+   const dept=await resolveVolunteerDepartment(actor,env);
+   const assigned=await db.prepare("SELECT 1 AS ok FROM mqa_volunteer_assignments WHERE volunteer_user_id=? AND status IN ('active','completed') LIMIT 1").bind(actor.id).first();
+   return json({can_submit_hours:!!assigned||(typeof dept==='string'&&!!dept.trim()),can_review_hours:false});
+  }
   if(path==='/volunteer-api/review-queue'&&request.method==='GET'){
    // Reviewers are never given an unfiltered queue. Each candidate is checked
    // against the existing portal's verified department authorization helper.
    if(typeof canManageVolunteer!=='function')return fail('Review access not configured',503);
-   const rows=await db.prepare("SELECT h.id,h.volunteer_user_id,h.assignment_id,h.activity_name,h.service_category,h.service_date,h.minutes_served,h.notes,h.submitted_at,h.department FROM mqa_volunteer_service_hours h LEFT JOIN mqa_volunteer_assignments a ON a.id=h.assignment_id WHERE h.status='submitted' ORDER BY h.submitted_at ASC LIMIT 200").all();
+   const rows=await db.prepare("SELECT h.id,h.volunteer_user_id,h.assignment_id,h.activity_name,h.service_category,h.service_date,h.minutes_served,h.notes,h.submitted_at,h.department FROM mqa_volunteer_service_hours h WHERE h.status='submitted' ORDER BY h.submitted_at ASC LIMIT 200").all();
    const allowed=[];
    for(const row of rows.results||[]){
-    if(row.volunteer_user_id===actor.id)continue;
+    if(row.volunteer_user_id===actor.id||!row.department)continue;
     if(await canManageVolunteer(actor,row.volunteer_user_id,row.department,env))allowed.push(row);
    }
-   return json({hours:allowed,scope:'verified_department_assignments',unassigned_excluded:true});
+   return json({hours:allowed,scope:'verified_department',unrouted_excluded:true});
   }
   if(path==='/volunteer-api/me'&&request.method==='GET'){
    const [a,h]=await Promise.all([
