@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS mqa_volunteer_service_hours (
  id TEXT PRIMARY KEY,
  volunteer_user_id TEXT NOT NULL REFERENCES users(id),
  assignment_id TEXT REFERENCES mqa_volunteer_assignments(id),
+ department TEXT NOT NULL,
  activity_name TEXT NOT NULL,
  service_category TEXT NOT NULL CHECK(service_category IN ('event','office_admin','other')),
  service_date TEXT NOT NULL,
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS mqa_volunteer_service_hours (
 CREATE INDEX IF NOT EXISTS idx_mqa_vol_hours_user_date ON mqa_volunteer_service_hours(volunteer_user_id,service_date);
 CREATE INDEX IF NOT EXISTS idx_mqa_vol_hours_category ON mqa_volunteer_service_hours(volunteer_user_id,service_category,status);
 CREATE INDEX IF NOT EXISTS idx_mqa_vol_hours_review ON mqa_volunteer_service_hours(status,submitted_at);
+CREATE INDEX IF NOT EXISTS idx_mqa_vol_hours_department_review ON mqa_volunteer_service_hours(department,status,submitted_at);
 CREATE TABLE IF NOT EXISTS mqa_volunteer_audit (
  id TEXT PRIMARY KEY,
  actor_user_id TEXT NOT NULL REFERENCES users(id),
@@ -48,7 +50,7 @@ CREATE TABLE IF NOT EXISTS mqa_volunteer_audit (
 CREATE INDEX IF NOT EXISTS idx_mqa_vol_audit_volunteer ON mqa_volunteer_audit(volunteer_user_id,created_at);
 -- Backend implementation requirements:
 -- GET /volunteer-api/me returns only authenticated user's assignments/hours.
--- POST /volunteer-api/hours derives volunteer_user_id from verified session, not request body.
+-- POST /volunteer-api/hours derives volunteer_user_id and department from verified server-side identity/assignment, not request body.
 -- Require service_category = event, office_admin, or other. Never infer from activity text.
 -- Reject overlapping duplicate submissions for same volunteer/assignment/date/time where applicable.
 -- GET /volunteer-api/me includes service_category per record for accurate thermometer totals.
