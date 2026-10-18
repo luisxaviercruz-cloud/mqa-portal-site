@@ -47,7 +47,7 @@ export async function handleVolunteerApi(request,env,{authenticate,canManageVolu
     ]);
     return json({id,status:'active'},201);
    }
-   const assignmentMatch=path.match(/^\\/volunteer-api\\/manage\\/assignments\\/([^/]+)$/);
+   const assignmentMatch=path.match(/^\/volunteer-api\/manage\/assignments\/([^/]+)$/);
    if(assignmentMatch&&request.method==='PATCH'){
     const b=await readBody(request);
     if(!['completed','cancelled'].includes(b.status))return fail('Invalid assignment status',400);
