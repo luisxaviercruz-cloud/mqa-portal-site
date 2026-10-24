@@ -32,6 +32,7 @@
 <article class="dash-card" id="employeeTools" hidden><div class="icon">▤</div><h3>Employee Workspace</h3><p>Employee documents, approved policies, and forms available to your assigned role.</p><p><a href="documents.html" style="display:inline-block;margin-top:12px;font-weight:800;color:#6c2f87">Open Employee Documents →</a></p></article>
 <article class="dash-card" id="departmentTools" hidden><div class="icon">◈</div><h3>Leadership Workspace</h3><p>Authorized department forms, leadership review tasks, and documents assigned to your department. Confidential HR files remain restricted.</p><p><a href="forms.html" style="display:inline-block;margin-top:12px;font-weight:800;color:#6c2f87">Open Department Forms →</a></p></article>
 <article class="dash-card" id="accessManagementCard" style="display:none"><div class="icon">♙</div><h3>User &amp; Access Management</h3><p>Manage onboarding, board positions, and role assignments through a protected workspace.</p><p><a href="user-access-management.html" style="font-weight:800;color:#6c2f87">Open User &amp; Access Management →</a></p></article>
+<article class="dash-card" id="adminBackofficeCard" style="display:none"><div class="icon">▦</div><h3>Admin Back Office</h3><p>Access authorized administrative workspaces.</p><p><a href="admin-backoffice.html" style="display:inline-block;margin-top:12px;font-weight:800;color:#6c2f87">Open Admin Back Office →</a></p></article>
 <article class="dash-card locked" id="leadershipCard"><div class="icon">◆</div><h3>Employee & Leadership Center</h3><p>Restricted tools and information for authorized MQA+ roles.</p><p class="restricted-note" id="leadershipNote">Restricted access</p></article>
 
 </section></main>
@@ -83,6 +84,12 @@ async function loadAccount(){
       }
     }catch(error){console.warn("Profile photo could not be loaded",error)}
     const roles=Array.isArray(u.roles)?u.roles:[];
+    // Show this added card only to users authorized by the Back Office.
+    try{
+      const response=await fetch("https://mqa-backoffice.luisxaviercruz.workers.dev/website-builder/access",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+      if(response.ok){const access=await response.json();if(access.can_view===true)document.getElementById("adminBackofficeCard").style.display="";}
+    }catch(_){/* Restricted card remains hidden if access cannot be verified. */}
+
     const first=u.first_name||"";
     const full=[u.first_name,u.last_name].filter(Boolean).join(" ");
     document.getElementById("welcome").textContent=first?"Welcome, "+first:"Welcome to your portal";
