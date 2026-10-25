@@ -12,15 +12,59 @@ const ENTRA_TENANT_ID="597e2367-54d7-47f9-b2f0-8fa25961a1f5";
 const ENTRA_REDIRECT="https://portal.mcultural.org/digital-workplace.html";
 async function initializeMicrosoftIdentity(){
  const login=document.getElementById("gateMicrosoft"),logout=document.getElementById("microsoftLogout"),message=document.getElementById("gateMessage");
+ const gate=document.getElementById("signInGate"),content=document.getElementById("workplaceContent");
+ gate.hidden=false;content.hidden=true;
  try{
- if(location.origin!=="https://portal.mcultural.org")throw Error("Microsoft sign-in is only available on the official Portal domain.");
- const lib=await new Promise((resolve,reject)=>{if(window.msal)return resolve(window.msal);const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js";script.onload=()=>window.msal?resolve(window.msal):reject(Error("Microsoft sign-in library unavailable."));script.onerror=()=>reject(Error("Unable to load Microsoft sign-in library."));document.head.appendChild(script)});
- const client=new lib.PublicClientApplication({auth:{clientId:ENTRA_CLIENT_ID,authority:"https://login.microsoftonline.com/"+ENTRA_TENANT_ID,redirectUri:ENTRA_REDIRECT},cache:{cacheLocation:"sessionStorage",storeAuthStateInCookie:false}});
- const getAccount=()=>client.getAllAccounts().find(a=>a.tenantId?.toLowerCase()===ENTRA_TENANT_ID);
- const update=()=>{const account=getAccount();document.getElementById("signInGate").hidden=!!account;document.getElementById("workplaceContent").hidden=!account;logout.hidden=!account;if(account)document.getElementById("identityNotice").textContent="Microsoft identity verified: "+(account.username||"MQA+ employee")+". Backend account linking and authorization enforcement are pending; existing Portal permissions still apply.";};
- document.getElementById("signInGate").hidden=false;document.getElementById("workplaceContent").hidden=true;const existing=getAccount();if(existing){login.textContent="Continue with Microsoft 365";message.textContent="Your Microsoft account is recognized. Select Continue to enter Digital Workplace.";}login.addEventListener("click",async()=>{login.disabled=true;message.textContent="Connecting to Microsoft…";try{if(!getAccount())await client.loginPopup({scopes:["openid","profile"],prompt:"select_account"});if(!getAccount())throw Error("Please use an account in the MQA+ Microsoft 365 organization.");update()}catch(e){message.textContent="Sign-in was not completed: "+(e.errorCode||e.message||"Please try again.")}finally{login.disabled=false}});
- logout.addEventListener("click",async()=>{logout.disabled=true;try{const account=getAccount();if(account)await client.logoutPopup({account,mainWindowRedirectUri:ENTRA_REDIRECT});update()}catch(e){message.textContent="Microsoft sign-out could not be completed."}finally{logout.disabled=false}});
- }catch(e){message.textContent=e.message||"Microsoft sign-in is unavailable.";login.disabled=true}
+  if(location.origin!=="https://portal.mcultural.org")throw Error("Microsoft sign-in requires the official MQA+ Portal domain.");
+  const lib=await new Promise((resolve,reject)=>{if(window.msal)return resolve(window.msal);const script=document.createElement("script");script.src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.4/lib/msal-browser.min.js";script.onload=()=>window.msal?resolve(window.msal):reject(Error("Microsoft sign-in library unavailable."));script.onerror=()=>reject(Error("Microsoft sign-in library unavailable."));document.head.appendChild(script)});
+  const client=new lib.PublicClientApplication({auth:{clientId:ENTRA_CLIENT_ID,authority:"https://login.microsoftonline.com/"+ENTRA_TENANT_ID,redirectUri:ENTRA_REDIRECT},cache:{cacheLocation:"sessionStorage",storeAuthStateInCookie:false}});
+  async function api(path,body,token){
+   const headers={"Content-Type":"application/json"};
+   if(token)headers.Authorization="Bearer "+token;
+   const response=await fetch(API+path,{method:"POST",headers,body:JSON.stringify(body),cache:"no-store"});
+   const data=await response.json().catch(()=>({}));
+   if(!response.ok||!data.ok)throw Error(data.error||"Microsoft authentication failed.");
+   return data;
+  }
+  login.addEventListener("click",async()=>{
+   login.disabled=true;message.textContent="Verifying Microsoft identity…";
+   try{
+    const challenge=await api("/auth/microsoft/challenge",{});
+    // The backend verifies this nonce against the signed Microsoft ID token.
+    // If MSAL does not preserve the supplied nonce, authentication fails closed.
+    const result=await client.loginPopup({scopes:["openid","profile"],prompt:"select_account",nonce:challenge.nonce});
+    if(!result.idToken)throw Error("Microsoft did not return an ID token.");
+    if(result.tenantId?.toLowerCase()!==ENTRA_TENANT_ID)throw Error("Use your MQA+ Microsoft 365 account.");
+    const portalToken=localStorage.getItem("mqa_session");
+    const payload={challenge_id:challenge.challenge_id,nonce:challenge.nonce,id_token:result.idToken};
+    // Initial linking requires the existing Portal session and executive authorization.
+    let verified;
+    try{verified=await api("/auth/microsoft/login",payload);}
+    catch(error){
+     if(!/not linked/i.test(error.message)||!portalToken)throw error;
+     // A consumed challenge must never be reused. Obtain a new challenge and ID token.
+     const next=await api("/auth/microsoft/challenge",{});
+     const fresh=await client.loginPopup({scopes:["openid","profile"],prompt:"select_account",nonce:next.nonce});
+     await api("/auth/microsoft/link",{challenge_id:next.challenge_id,nonce:next.nonce,id_token:fresh.idToken},portalToken);
+     const finalChallenge=await api("/auth/microsoft/challenge",{});
+     const finalResult=await client.loginPopup({scopes:["openid","profile"],prompt:"select_account",nonce:finalChallenge.nonce});
+     verified=await api("/auth/microsoft/login",{challenge_id:finalChallenge.challenge_id,nonce:finalChallenge.nonce,id_token:finalResult.idToken});
+    }
+    if(!verified.session_token)throw Error("Portal session was not issued.");
+    localStorage.setItem("mqa_session",verified.session_token);
+    // Refresh permissions using the server-verified Portal session; never trust MSAL account data for authorization.
+    location.reload();
+   }catch(error){gate.hidden=false;content.hidden=true;message.textContent=error.message||"Microsoft sign-in could not be completed."}
+   finally{login.disabled=false}
+  });
+  logout.addEventListener("click",async()=>{
+   logout.disabled=true;
+   try{const account=client.getAllAccounts().find(a=>a.tenantId?.toLowerCase()===ENTRA_TENANT_ID);if(account)await client.logoutPopup({account,mainWindowRedirectUri:ENTRA_REDIRECT});}
+   catch(error){message.textContent="Microsoft sign-out could not be completed."}
+   finally{logout.disabled=false}
+  });
+  message.textContent="Sign in with your organizational Microsoft account to verify workplace access.";
+ }catch(error){message.textContent=error.message||"Microsoft sign-in is unavailable.";login.disabled=true}
 }
 const API="https://mqa-portal.luisxaviercruz.workers.dev";
 (async()=>{const status=document.getElementById("status"),token=localStorage.getItem("mqa_session");if(!token){location.replace("signin.html");return}try{const r=await fetch(API+"/auth/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});if(!r.ok)throw Error("Your Portal session could not be verified.");const data=await r.json();const u=data.user;if(!u)throw Error('Unable to verify Portal identity.');const roles=(Array.isArray(u.roles)?u.roles:[]).map(v=>String(v).toLowerCase().trim().replace(/[\s-]+/g,"_"));const has=(...r)=>r.some(v=>roles.includes(v));const lead=has("leader","department_lead","department_leader","department_head","department_manager","department_director","director");const employee=has("employee")||lead;const adminRole=has("ceo","coo","executive_director","administrator","system_administrator","founder");const volunteer=has("volunteer","ambassador");const board=has("board_member","board_leadership","board_chair");let admin=false;try{const ar=await fetch("https://mqa-backoffice.luisxaviercruz.workers.dev/website-builder/access",{headers:{Authorization:"Bearer "+token},cache:"no-store"});if(ar.ok){const access=await ar.json();admin=access.can_view===true}}catch(_){}
