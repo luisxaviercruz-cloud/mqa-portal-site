@@ -35,21 +35,7 @@ async function initializeMicrosoftIdentity(){
     const result=await client.loginPopup({scopes:["openid","profile"],prompt:"select_account",nonce:challenge.nonce});
     if(!result.idToken)throw Error("Microsoft did not return an ID token.");
     if(result.tenantId?.toLowerCase()!==ENTRA_TENANT_ID)throw Error("Use your MQA+ Microsoft 365 account.");
-    const portalToken=localStorage.getItem("mqa_session");
-    const payload={challenge_id:challenge.challenge_id,nonce:challenge.nonce,id_token:result.idToken};
-    // Initial linking requires the existing Portal session and executive authorization.
-    let verified;
-    try{verified=await api("/auth/microsoft/login",payload);}
-    catch(error){
-     if(!/not linked/i.test(error.message)||!portalToken)throw error;
-     // A consumed challenge must never be reused. Obtain a new challenge and ID token.
-     const next=await api("/auth/microsoft/challenge",{});
-     const fresh=await client.loginPopup({scopes:["openid","profile"],prompt:"select_account",nonce:next.nonce});
-     await api("/auth/microsoft/link",{challenge_id:next.challenge_id,nonce:next.nonce,id_token:fresh.idToken},portalToken);
-     const finalChallenge=await api("/auth/microsoft/challenge",{});
-     const finalResult=await client.loginPopup({scopes:["openid","profile"],prompt:"select_account",nonce:finalChallenge.nonce});
-     verified=await api("/auth/microsoft/login",{challenge_id:finalChallenge.challenge_id,nonce:finalChallenge.nonce,id_token:finalResult.idToken});
-    }
+    const verified=await api("/auth/microsoft/login",{challenge_id:challenge.challenge_id,nonce:challenge.nonce,id_token:result.idToken});
     if(!verified.session_token)throw Error("Portal session was not issued.");
     localStorage.setItem("mqa_session",verified.session_token);
     // Refresh permissions using the server-verified Portal session; never trust MSAL account data for authorization.
