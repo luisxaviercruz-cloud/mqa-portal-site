@@ -75,4 +75,28 @@ const API="https://mqa-portal.luisxaviercruz.workers.dev";
 (async()=>{const token=localStorage.getItem("mqa_session");if(!token){location.replace("../signin.html");return}try{const auth=await fetch(API+"/auth/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});if(auth.status===401||auth.status===403){localStorage.removeItem("mqa_session");location.replace("../signin.html");return}if(!auth.ok)throw Error("Account verification unavailable");const access=await fetch("https://mqa-backoffice.luisxaviercruz.workers.dev/website-builder/access",{headers:{Authorization:"Bearer "+token},cache:"no-store"});if(!access.ok)throw Error("Website Builder access not available");const rights=await access.json();if(rights.can_edit!==true)throw Error("You do not have edit permission for Website Builder");$("reviewApprove").hidden=rights.can_approve!==true;$("reviewChanges").hidden=rights.can_review!==true;$("studioHeader").hidden=false;$("studioMain").hidden=false;$("existingWebsitePreview").hidden=false;showLivePage();$("accessStatus").hidden=true}catch(err){$("accessStatus").textContent=err.message+". Contact an authorized portal administrator."}})();
 reset("general");
 </script>
-</body></html>
+<style id="mqaApprovedEditorShell">
+body.mqa-shell{background:#eeeaf1}body.mqa-shell #studioHeader{background:#21182d;padding:12px 18px}body.mqa-shell #studioHeader button{background:#483458;color:white;border-color:#675276}body.mqa-shell #studioHeader .primary{background:#812cb0}
+#mqaShell{display:flex;height:calc(100vh - 76px);min-height:550px;overflow:hidden}
+#mqaRail{width:78px;flex:0 0 78px;background:#241d30;display:flex;flex-direction:column;padding-top:10px;overflow:auto}
+#mqaRail button{background:none;color:white;border:0;border-radius:0;padding:12px 2px;font-size:12px}#mqaRail button strong{display:block;font-size:24px;font-weight:400}#mqaRail button[aria-expanded=true]{background:#603577}
+#mqaPane{flex:0 0 330px;width:330px;background:white;overflow:auto;padding:16px;border-right:1px solid #ded5e5}#mqaPane[hidden]{display:none!important}
+#mqaPaneHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}#mqaPaneHead h2{margin:0}#mqaClose{font-size:24px;background:#f2eaf6;color:#432058;border:0;width:38px;height:38px;padding:0}
+#mqaPaneContent>section{display:block!important;margin-bottom:12px;min-width:0}#mqaPaneContent input,#mqaPaneContent textarea,#mqaPaneContent select{max-width:100%}
+#mqaCanvas{flex:1;min-width:0;overflow:auto;padding:14px}#mqaCanvas #existingWebsitePreview{display:block!important;margin:0!important;border:0!important;background:transparent}#mqaCanvas #existingWebsitePreview>h2,#mqaCanvas #existingWebsitePreview>p.muted{display:none}
+#mqaCanvas #liveSite{height:calc(100vh - 240px)!important;min-height:390px}body.mqa-shell #studioMain{display:none!important}
+@media(max-width:800px){#mqaRail{width:62px;flex-basis:62px}#mqaPane{position:absolute;left:62px;top:70px;bottom:0;z-index:35;width:min(330px,calc(100vw - 62px));box-shadow:5px 0 20px #0003}}
+</style><script id="mqaApprovedEditorShell">
+(function(){function init(){const header=document.getElementById('studioHeader'),main=document.getElementById('studioMain'),live=document.getElementById('existingWebsitePreview');if(!header||!main||!live)return;
+const shell=document.createElement('div');shell.id='mqaShell';shell.hidden=true;shell.innerHTML='<nav id="mqaRail" aria-label="Editor tools"></nav><aside id="mqaPane" hidden><div id="mqaPaneHead"><h2 id="mqaPaneTitle"></h2><button id="mqaClose" type="button" aria-label="Close panel">×</button></div><div id="mqaPaneContent"></div></aside><div id="mqaCanvas"></div>';
+header.after(shell);shell.querySelector('#mqaCanvas').append(live);
+const sections=Array.from(main.querySelectorAll(':scope > section'));const page=sections.find(s=>s.querySelector('#template')),inspect=sections.find(s=>s.querySelector('#inspector')),draft=document.getElementById('draftManagement'),preview=document.getElementById('previewPanel');
+const parking=document.createElement('div');parking.hidden=true;document.body.append(parking);[page,inspect,draft,preview].filter(Boolean).forEach(s=>parking.append(s));
+const tabs=[['Add','⊕',[page]],['Pages','▤',[page,draft]],['Design','◈',[page]],['Sections','▦',[page,inspect,preview]],['Media','▧',[page,inspect]],['Events','▣',[page,draft]],['Settings','⚙',[page,draft]]];
+const rail=shell.querySelector('#mqaRail'),pane=shell.querySelector('#mqaPane'),content=shell.querySelector('#mqaPaneContent');
+function close(){pane.hidden=true;rail.querySelectorAll('button').forEach(b=>b.setAttribute('aria-expanded','false'))}
+tabs.forEach(([name,icon,panels])=>{const b=document.createElement('button');b.type='button';b.setAttribute('aria-expanded','false');b.setAttribute('aria-controls','mqaPane');b.innerHTML='<strong aria-hidden="true">'+icon+'</strong>'+name;b.onclick=()=>{if(!pane.hidden&&b.getAttribute('aria-expanded')==='true'){close();return}rail.querySelectorAll('button').forEach(x=>x.setAttribute('aria-expanded','false'));b.setAttribute('aria-expanded','true');shell.querySelector('#mqaPaneTitle').textContent=name;content.replaceChildren(...[...new Set(panels.filter(Boolean))]);pane.hidden=false};rail.append(b)});
+shell.querySelector('#mqaClose').onclick=close;document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+const sync=()=>{shell.hidden=header.hidden;document.body.classList.toggle('mqa-shell',!header.hidden)};new MutationObserver(sync).observe(header,{attributes:true,attributeFilter:['hidden']});sync()}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();
+</script></body></html>
